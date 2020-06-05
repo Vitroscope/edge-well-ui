@@ -1,0 +1,61 @@
+FROM arm64v8/ubuntu:18.04 as builder
+
+# Install other apt deps
+RUN DEBIAN_FRONTEND=noninteractive apt-get update \
+    && apt-get -y install wget unzip fakeroot
+RUN wget -qO- https://deb.nodesource.com/setup_12.x | bash -
+RUN apt-get install -y nodejs && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/src/edge-well-ui
+
+# Move package.json to filesystem
+COPY package.json .
+
+RUN JOBS=MAX npm install --unsafe-perm
+
+COPY app/ ./app/
+
+RUN DEBUG=electron-rebuild npm run rebuild
+RUN DEBUG=electron-packager npm run build
+RUN DEBUG=electron-installer-debian npm run debarm64
+
+# ---
+
+FROM arm64v8/ubuntu:18.04
+
+ENV VERSION 0.0.1
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get update \
+    && apt-get -y install \
+    sudo \
+    libgtk-3-0 \
+    libnotify4 \
+    libnss3 \
+    libxss1 \
+    libxtst6 \
+    xdg-utils \
+    xvfb \
+    libuuid1 \
+    libasound2 \
+    libglib2.0-bin \
+    libcanberra-gtk-module \
+    libcanberra-gtk3-module
+
+RUN export uid=1000 gid=1000 && \
+    mkdir -p /home/cerulean && \
+    echo "cerulean:x:${uid}:${gid}:cerulean,,,:/home/cerulean:/bin/bash" >> /etc/passwd && \
+    echo "cerulean:x:${uid}:" >> /etc/group && \
+    #echo "cerulean ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/cerulean && \
+    #chmod 0440 /etc/sudoers.d/cerulean && \
+    chown ${uid}:${gid} -R /home/cerulean
+
+WORKDIR /usr/src/edge-well-ui
+
+COPY --from=builder /usr/src/edge-well-ui/dist/installers/edge-well-ui_${VERSION}_arm64.deb .
+
+RUN dpkg -i edge-well-ui_${VERSION}_arm64.deb
+
+USER cerulean
+ENV HOME /home/cerulean
+
+CMD ["edge-well-ui"]

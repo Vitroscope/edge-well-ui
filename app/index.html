@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Cerulean Data Hub</title>
+        <style>
+            html, body {
+                overflow: hidden;
+                background-color: #03254c;
+                background-image: url(iam.png);
+                background-repeat: no-repeat;
+                background-position: center 2em;
+                background-size: 35em;
+            }
+            #logo {
+                position: absolute;
+                bottom: 2em;
+                left: 2em;
+            }
+            #buttons {
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 25%;
+                height: 100%;
+                padding: 2em;
+            }
+            #button-list {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: space-evenly;
+                flex-direction: column;
+                list-style-type: none;
+            }
+            .button {
+                border: 1px solid #04bbe7;
+                border-radius: 3px;
+                background-color: #72d6e9;
+                padding: 2em 5em;
+            }
+            .button:focus {
+                outline: none;
+            }
+            .button:active {
+                background-color: #c966da;
+            }
+        </style>
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.10/css/all.css" integrity="sha384-+d0P83n9kaQMCwj8F4RJB66tzIwOKmrdb46+porD/OvrJ+37WqIM7UoBtwHO6Nlg" crossorigin="anonymous">
+    </head>
+    <body>
+        <div id="logo">
+            <img src="Cerulean_C_color.svg" width="60" />
+        </div>
+        <div id="buttons">
+            <ul id="button-list">
+                <li class="button-wrap">
+                    <button class="button" name="option1">Option 1</button>
+                </li>
+                <li class="button-wrap">
+                    <button class="button" name="option2">Option 2</button>
+                </li>
+                <li class="button-wrap">
+                    <button class="button" name="option3">Option 3</button>
+                </li>
+            </ul>
+        </div>
+        <script>
+
+            const { ipcRenderer } = require('electron');
+
+            ipcRenderer.send('heartbeat', 'ping');
+            ipcRenderer.on('heartbeat', (event, args) => {
+                console.log('heartbeat', args);
+            });
+
+            window.addEventListener('DOMContentLoaded', (event) => {
+                function handleClick(event) {
+                    ipcRenderer.send('option', event.target.name);
+                }
+                document.querySelectorAll('.button').forEach(node => node.addEventListener('click', handleClick));
+            });
+
+            // You can also require other files to run in this process
+        </script>
+    </body>
+</html>
