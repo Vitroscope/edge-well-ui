@@ -1,29 +1,41 @@
-FROM arm64v8/ubuntu:18.04 as builder
+FROM --platform=$TARGETPLATFORM ubuntu:18.04 as builder
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
 
 # Install other apt deps
 RUN DEBIAN_FRONTEND=noninteractive apt-get update \
-    && apt-get -y install wget unzip fakeroot
+    && apt-get -y install wget unzip fakeroot jq
 RUN wget -qO- https://deb.nodesource.com/setup_12.x | bash -
 RUN apt-get install -y nodejs && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /usr/src/edge-well-ui
+ENV WORKING_DIRECTORY=/usr/src/edge-well-ui
+
+WORKDIR ${WORKING_DIRECTORY}
 
 # Move package.json to filesystem
 COPY package.json .
 
 RUN JOBS=MAX npm install --unsafe-perm
+RUN jq .version package.json -r > version.txt
 
 COPY app/ ./app/
 
-RUN DEBUG=electron-rebuild npm run rebuild
-RUN DEBUG=electron-packager npm run build
-RUN DEBUG=electron-installer-debian npm run debarm64
+ENV TARGET=$TARGETPLATFORM
+
+RUN export PLATFORM=$(echo $TARGET | sed "s/linux\///") \
+    ARCHITECTURE=$(echo $TARGET | sed "s/linux\///" | sed "s/amd/x/"); \
+    DEBUG=electron-rebuild npm run rebuild; \
+    DEBUG=electron-packager npm run build; \
+    DEBUG=electron-installer-debian npm run deb; \
+    mv $WORKING_DIRECTORY/dist/installers/edge-well-ui_$(cat version.txt)_$PLATFORM.deb $WORKING_DIRECTORY/edge-well-ui.deb
 
 # ---
 
-FROM arm64v8/ubuntu:18.04
+FROM --platform=$TARGETPLATFORM ubuntu:18.04
 
-ENV VERSION 0.0.1
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && apt-get -y install \
@@ -41,6 +53,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     libcanberra-gtk-module \
     libcanberra-gtk3-module
 
+RUN dpkg --add-architecture x64
+
 RUN export uid=1000 gid=1000 && \
     mkdir -p /home/cerulean && \
     echo "cerulean:x:${uid}:${gid}:cerulean,,,:/home/cerulean:/bin/bash" >> /etc/passwd && \
@@ -51,9 +65,9 @@ RUN export uid=1000 gid=1000 && \
 
 WORKDIR /usr/src/edge-well-ui
 
-COPY --from=builder /usr/src/edge-well-ui/dist/installers/edge-well-ui_${VERSION}_arm64.deb .
+COPY --from=builder /usr/src/edge-well-ui/edge-well-ui.deb .
 
-RUN dpkg -i edge-well-ui_${VERSION}_arm64.deb
+RUN dpkg -i edge-well-ui.deb
 
 USER cerulean
 ENV HOME /home/cerulean

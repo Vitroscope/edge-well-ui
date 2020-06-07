@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node_modules/.bin/electron .",
     "rebuild": "node_modules/.bin/electron-rebuild",
-    "build": "node_modules/.bin/electron-packager . edge-well-ui --overwrite --platform linux --arch arm64 --out dist/",
-    "debarm64": "node_modules/.bin/electron-installer-debian --src dist/edge-well-ui-linux-arm64/ --dest dist/installers/ --arch arm64"
+    "build": "node_modules/.bin/electron-packager . edge-well-ui --overwrite --platform linux --arch $ARCHITECTURE --out dist/",
+    "deb": "node_modules/.bin/electron-installer-debian --src dist/edge-well-ui-linux-$ARCHITECTURE/ --dest dist/installers/ --arch $PLATFORM"
   },
   "author": "Antti Rintala <rintsi@gmail.com>",
   "license": "LGPL-3.0-only",
