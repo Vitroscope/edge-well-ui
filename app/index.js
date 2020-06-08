@@ -70,7 +70,7 @@ function createWindow() {
         mainWindow = null;
     });
   
-    edgeClient = Client.fromEnvironment(Transport);
+    /*edgeClient = Client.fromEnvironment(Transport);
 
     edgeClient.on("error", function(error) {
         edgeLive = false;
@@ -89,7 +89,7 @@ function createWindow() {
                 pipeMessage(client,'connection-test');
             });
         }
-    });
+    });*/
 }
 
 app.allowRendererProcessReuse = true;
