@@ -39,7 +39,6 @@ ARG BUILDPLATFORM
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     && apt-get -y install \
-    sudo \
     libgtk-3-0 \
     libnotify4 \
     libnss3 \

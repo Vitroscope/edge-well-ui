@@ -12,19 +12,17 @@ let mainWindow,
     edgeClient;
 
 // This function just pipes the messages without any change.
-function pipeMessage(client, inputName, msg) {
+function pipeMessage(client, msg) {
     client.complete(msg, printResultFor("Receiving message"));
 
-    if (inputName === "input1") {
-        var message = msg.getBytes().toString("utf8");
-        if (message) {
-            var outputMsg = new Message(message);
-            client.sendOutputEvent(
-                "output1",
-                outputMsg,
-                printResultFor("Sending received message")
-            );
-        }
+    var message = msg.getBytes().toString("utf8");
+    if (message) {
+        var outputMsg = new Message(message);
+        client.sendOutputEvent(
+            "output1",
+            outputMsg,
+            printResultFor("Sending received message")
+        );
     }
 }
 
@@ -41,13 +39,13 @@ function printResultFor(op) {
 }
 
 function createWindow() {
-  // Create the browser window.
+    // Create the browser window.
     mainWindow = new BrowserWindow({
         width: process.env.CDH_SCREEN_WIDTH,
         height: process.env.CDH_SCREEN_HEIGHT,
-        fullscreen: true,
+        fullscreen: false,
         alwaysOnTop: false,
-        frame: false,
+        frame: true,
         webPreferences: {
             nodeIntegration: true
         }
@@ -72,7 +70,7 @@ function createWindow() {
         mainWindow = null;
     });
   
-    Client.fromEnvironment(Transport,(client) => {
+    Client.fromEnvironment(Transport, (client) => {
         client.on("error", function(error) {
             edgeLive = false;
             edgeClient = undefined;
@@ -88,8 +86,8 @@ function createWindow() {
                 edgeLive = true;
                 edgeClient = client;
                 // Act on input messages to the module.
-                client.on("inputMessage", function(inputName, msg) {
-                    pipeMessage(client, inputName, msg);
+                client.on("connection-test", function() {
+                    pipeMessage(client,'connection-test');
                 });
             }
         });
@@ -140,7 +138,7 @@ ipcMain.on("heartbeat", (event, args) => {
 ipcMain.on("option", (event, args) => {
     if(edgeLive && edgeClient !== undefined) {
         const message = {
-            option: args
+            text: 'Testing connection from Well-O-Meter'
         };
         const outputMessage = new Message(JSON.stringify(message))
         edgeClient.sendEvent(
@@ -148,5 +146,4 @@ ipcMain.on("option", (event, args) => {
             printResultFor("Sending received message")
         );
     }
-    console.log(args);
 });

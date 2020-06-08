@@ -3,11 +3,14 @@
     <head>
         <meta charset="UTF-8">
         <title>Cerulean Data Hub</title>
+        <script src="https://unpkg.com/moment"></script>
+        <script src="js/moment-timezone-with-data.js"></script>
+        <script src="js/highcharts.src.js"></script>
         <style>
+            @import url("https://fonts.googleapis.com/css?family=Teko");
             html, body {
                 overflow: hidden;
                 background-color: #03254c;
-                background-image: url(iam.png);
                 background-repeat: no-repeat;
                 background-position: center 2em;
                 background-size: 35em;
@@ -15,60 +18,311 @@
             #logo {
                 position: absolute;
                 bottom: 2em;
-                left: 2em;
+                left: 50%;
+                margin-left: -1em;
             }
-            #buttons {
+            #main {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+            }
+            #header {
+                flex: 1;
+                background-color: #03254c;
+                line-height: 83px;
+                font-size: 38px;
+                font-weight: 600;
+                padding: 0 16px;
+                font-family: Teko, sans-serif;
+                color: white;
+            }
+            #contents {
+                flex: 7;
+                display: flex;
+                flex-direction: row;
+            }
+            #well-depth {
+                position: relative;
+                flex: 2;
+                background-color: #03254c;
+            }
+            #charts {
+                flex: 6;
+                background-color: white;
+                padding: 1em;
+            }
+
+            .wave {
+                position: absolute;
+                left:0;
+                right:0;
+                top:0;
+                bottom:0;
+                z-index: 1;
+            }
+
+            .wave + .wave {
+                z-index: 2;
+            }
+            
+            .ruler {
+                position: absolute;
+                width: auto;
+                top: 16px;
+                left: 5px;
+                bottom: 16px;
+                z-index: 3;
+                color: white;
+            }
+            .ruler .cm,
+            .ruler .mm {
+                position: absolute;
+                border-top: 1px solid white;
+                width: 14px;
+                height: 10%;
+            }
+            .ruler .cm:after {
+                position: absolute;
+                right: -15px;
+                top: -6px;
+                font: 11px/1 sans-serif;
+            }
+            .ruler .mm {
+                width: 5px;
+            }
+            .ruler .mm:nth-of-type(5) { width: 10px;
+            }
+            .ruler .cm:nth-of-type(1) { top: 0%; }
+            .ruler .cm:nth-of-type(1):after { content: "10"; }
+            .ruler .cm:nth-of-type(2) { top: 10%; }
+            .ruler .cm:nth-of-type(2):after { content: "9"; }
+            .ruler .cm:nth-of-type(3) { top: 20%; }
+            .ruler .cm:nth-of-type(3):after { content: "8"; }
+            .ruler .cm:nth-of-type(4) { top: 30%; }
+            .ruler .cm:nth-of-type(4):after { content: "7"; }
+            .ruler .cm:nth-of-type(5) { top: 40%; }
+            .ruler .cm:nth-of-type(5):after { content: "6"; }
+            .ruler .cm:nth-of-type(6) { top: 50%; }
+            .ruler .cm:nth-of-type(6):after { content: "5"; }
+            .ruler .cm:nth-of-type(7) { top: 60%; }
+            .ruler .cm:nth-of-type(7):after { content: "4"; }
+            .ruler .cm:nth-of-type(8) { top: 70%; }
+            .ruler .cm:nth-of-type(8):after { content: "3"; }
+            .ruler .cm:nth-of-type(9) { top: 80%; }
+            .ruler .cm:nth-of-type(9):after { content: "2"; }
+            .ruler .cm:nth-of-type(10) { top: 90%; }
+            .ruler .cm:nth-of-type(10):after { content: "1"; }
+            .ruler .cm:nth-of-type(11) { top: 100%; }
+            .ruler .cm:nth-of-type(11):after { content: "0"; }
+            .ruler .mm:nth-of-type(1) { top: 10%; }
+            .ruler .mm:nth-of-type(2) { top: 20%; }
+            .ruler .mm:nth-of-type(3) { top: 30%; }
+            .ruler .mm:nth-of-type(4) { top: 40%; }
+            .ruler .mm:nth-of-type(5) { top: 50%; }
+            .ruler .mm:nth-of-type(6) { top: 60%; }
+            .ruler .mm:nth-of-type(7) { top: 70%; }
+            .ruler .mm:nth-of-type(8) { top: 80%; }
+            .ruler .mm:nth-of-type(9) { top: 90%; }
+            .ruler .mm:nth-of-type(10) { top: 100%; }
+
+            #depth {
+                position: absolute;
+                bottom: 60%;
+                left: 50%;
+                width: 5em;
+                margin-left: -1em;
+                color: white;
+            }
+
+            #connection {
+                float: right; 
+                padding: 20px 10px; 
+                margin-right: 20px; 
+                color: green;
+            }
+            #connection.pushed {
+                transform: scale(0.8);
+            }
+
+            #connection-modal {
+                position: absolute;
+                transition: all 280ms ease-in-out;
+                width: 0px;
+                height: 280px;
+                margin-left: 0px;
+                box-shadow: 0 0 0 0px rgba(0,0,0,0);
+                top: -100%;
+                margin-top: 0px;
+                left: 50%;
+                z-index: 100;
+                background-color: #ffffff;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            #connection-modal.slide {
+                top: 50%;
+                margin-top: -140px;                
+                box-shadow: 0 0 0 10px rgba(0,0,0,0.25);
+            }
+
+            #connection-modal.active {
+                width: 600px;
+                margin-left: -300px;
+                border-radius: 3px;
+            }
+
+            #modal-close {
                 position: absolute;
                 top: 0;
                 right: 0;
-                width: 25%;
-                height: 100%;
-                padding: 2em;
+                font-size: 30px;
+                color: #03254c;
+                padding: 20px 10px; 
+                margin-right: 20px; 
             }
-            #button-list {
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                padding: 0;
-                display: flex;
-                align-items: center;
-                justify-content: space-evenly;
-                flex-direction: column;
-                list-style-type: none;
+            #modal-close.pushed {
+                transform: scale(0.8);
             }
-            .button {
-                border: 1px solid #04bbe7;
-                border-radius: 3px;
-                background-color: #72d6e9;
-                padding: 2em 5em;
+
+            #modal-contents {
+                transition: opacity 140ms linear;
+                opacity: 0;
             }
-            .button:focus {
-                outline: none;
+            #connection-modal.active #modal-contents {
+                opacity: 1;
             }
-            .button:active {
-                background-color: #c966da;
+            #test-connection {
+                border: 0;
+                border-radius: 0.25rem;
+                background: #04bbe7;
+                color: white;
+                font-family: system-ui, sans-serif;
+                font-size: 1rem;
+                line-height: 1.2;
+                white-space: nowrap;
+                text-decoration: none;
+                padding: 0.25rem 0.5rem;
+                margin: 0.25rem;
+                cursor: pointer;
             }
+            #test-connection:active {
+                transform: scale(0.9);
+            }
+
         </style>
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.10/css/all.css" integrity="sha384-+d0P83n9kaQMCwj8F4RJB66tzIwOKmrdb46+porD/OvrJ+37WqIM7UoBtwHO6Nlg" crossorigin="anonymous">
     </head>
     <body>
-        <div id="logo">
-            <img src="Cerulean_C_color.svg" width="60" />
+
+        <div id="main">
+            <header id="header">
+                <i class="fas fa-cog" style="float: right; padding: 20px 10px;"></i>
+                <i id="connection" class="fas fa-wifi"></i>
+                Rintalankylä Well-O-Meter
+            </header>
+            <article id="contents">
+                <div id="well-depth">
+                    <div id="logo">
+                        <img src="Cerulean_C_color.svg" width="60" />
+                    </div>            
+                    <div id="depth">
+                        <div class="text">DEPTH</div>
+                        <div class="value">7,89m</div>
+                    </div>
+                    <svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" class="wave"><defs></defs><path id="waves1" d=""/></svg>
+                    <svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" class="wave"><defs></defs><path id="waves2" d=""/></svg>
+                    <div class='ruler'>
+                        <div class='cm'><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div></div>
+                        <div class='cm'><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div></div>
+                        <div class='cm'><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div></div>
+                        <div class='cm'><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div></div>
+                        <div class='cm'><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div></div>
+                        <div class='cm'><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div></div>
+                        <div class='cm'><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div></div>
+                        <div class='cm'><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div></div>
+                        <div class='cm'><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div></div>
+                        <div class='cm'><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div><div class='mm'></div></div>
+                        <div class='cm'></div>
+                    </div>
+                </div>
+                <div id="charts"></div>
+            </article>
+            <div id="connection-modal" class="slide active">
+                <div id="modal-contents">
+                    <div id="modal-close"><i class="fas fa-times"></i></div>
+                    <button id="test-connection">TEST CONNECTION</button>    
+                </div>
+            </div>
         </div>
-        <div id="buttons">
-            <ul id="button-list">
-                <li class="button-wrap">
-                    <button class="button" name="option1">Option 1</button>
-                </li>
-                <li class="button-wrap">
-                    <button class="button" name="option2">Option 2</button>
-                </li>
-                <li class="button-wrap">
-                    <button class="button" name="option3">Option 3</button>
-                </li>
-            </ul>
-        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.3.1/gsap.min.js" integrity="sha256-MVs0yHYDQBhIRZrNeWB1YaNMrGbFwowIEPIl3um5MZE=" crossorigin="anonymous"></script>
+        <script src="js/wavify.js"></script>
         <script>
+            var wave1 = wavify(document.querySelector('#waves1'), {
+                height: 110,
+                bones: 8,
+                amplitude: 20,
+                color: 'white',
+                speed: .15
+            });
+
+            var wave2 = wavify(document.querySelector('#waves2'), {
+                height: 100,
+                bones: 4,
+                amplitude: 15,
+                color: 'rgba(255, 255, 255, .8)',
+                speed: .25
+            });            
+
+            const getOptions = (timeLabels, data) => ({
+                chart: {
+                    backgroundColor: '#ffffff',
+                },
+                colors: ['#03254c', '#0d233a', '#8bbc21', '#910000', '#1aadce','#492970', '#f28f43', '#77a1e5', '#c42525', '#a6c96a'],
+                title: {
+                    text: "Well Water Level - Last 7 Days"
+                },
+                xAxis: {
+                    categories: timeLabels
+                },
+                yAxis: {
+                    title: { enabled: false },
+                    max: 10,
+                    min: 0
+                },
+                series: [{ name: 'Depth', data }],
+                plotOptions: {
+                    series: {
+                        point: {
+                            events: {
+                                mouseOver: function() {}
+                            }
+                        }
+                    }
+                },
+                legend: { enabled: false },
+                credits: { enabled: false }
+            });
+
+            timelineData = (desiredStartTime, interval, period) => {
+                const periodsInADay = moment.duration(1, 'week').as(period);
+
+                const timeLabels = [];
+                const data = [];
+                const startTimeMoment = moment(desiredStartTime, 'D.M.');
+                for (let i = 0; i <= periodsInADay; i += interval) {
+                    startTimeMoment.add(i === 0 ? 0 : interval, period);
+                    timeLabels.push(startTimeMoment.tz('Europe/Helsinki').format('D.M.'));
+                    data.push(parseFloat(Number((Math.random() * 0.5) + 8).toFixed(2)));
+                }
+
+                return { timeLabels, data };
+            };
 
             const { ipcRenderer } = require('electron');
 
@@ -78,12 +332,37 @@
             });
 
             window.addEventListener('DOMContentLoaded', (event) => {
+                const connection = document.querySelector('#connection');
+                const modal = document.querySelector('#connection-modal');
+                const modalClose = document.querySelector('#modal-close');
+                const testConnection = document.querySelector('#test-connection');
+
                 function handleClick(event) {
+                    const icon = event.target;
+                    modal.classList.add('slide');
+                    setTimeout(() => modal.classList.add('active'), 280);
+                    icon.classList.add('pushed');
+                    setTimeout(() => icon.classList.remove('pushed'), 140);
                     ipcRenderer.send('option', event.target.name);
                 }
-                document.querySelectorAll('.button').forEach(node => node.addEventListener('click', handleClick));
-            });
 
+                connection.addEventListener('click', handleClick);
+                modalClose.addEventListener('click', () => {
+                    modalClose.classList.add('pushed');
+                    setTimeout(() => modalClose.classList.remove('pushed'), 140);
+                    modal.classList.remove('active');
+                    setTimeout(() => modal.classList.remove('slide'), 280);
+                });
+                testConnection.addEventListener('click', () => {
+                    ipcRenderer.send('connection-test');
+                });
+
+                const sevenDaysAgo = moment().subtract(7, 'days');
+                const { timeLabels, data } = timelineData(sevenDaysAgo.tz('Europe/Helsinki').format('D.M.'), 1, 'day');
+                const options = getOptions(timeLabels, data);
+                Highcharts.chart('charts', options);
+
+            });
             // You can also require other files to run in this process
         </script>
     </body>
