@@ -70,28 +70,25 @@ function createWindow() {
         mainWindow = null;
     });
   
-    Client.fromEnvironment(Transport, (client) => {
-        client.on("error", function(error) {
-            edgeLive = false;
-            edgeClient = undefined;
+    edgeClient = Client.fromEnvironment(Transport);
+
+    edgeClient.on("error", function(error) {
+        edgeLive = false;
+        throw error;
+    });
+
+    // connect to the Edge instance
+    edgeClient.open(function(error) {
+        if (error) {
             throw error;
-        });
-    
-        // connect to the Edge instance
-        client.open(function(error) {
-            if (error) {
-                throw error;
-            } else {
-                console.log("IoT Hub module client initialized");
-                edgeLive = true;
-                edgeClient = client;
-                // Act on input messages to the module.
-                client.on("connection-test", function() {
-                    pipeMessage(client,'connection-test');
-                });
-            }
-        });
-    
+        } else {
+            console.log("IoT Hub module client initialized");
+            edgeLive = true;
+            // Act on input messages to the module.
+            client.on("connection-test", function() {
+                pipeMessage(client,'connection-test');
+            });
+        }
     });
 }
 
