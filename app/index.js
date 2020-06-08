@@ -43,9 +43,9 @@ function createWindow() {
     mainWindow = new BrowserWindow({
         width: process.env.CDH_SCREEN_WIDTH,
         height: process.env.CDH_SCREEN_HEIGHT,
-        fullscreen: false,
+        fullscreen: true,
         alwaysOnTop: false,
-        frame: true,
+        frame: false,
         webPreferences: {
             nodeIntegration: true
         }
