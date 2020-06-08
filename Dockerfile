@@ -52,8 +52,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update \
     libcanberra-gtk-module \
     libcanberra-gtk3-module
 
-RUN dpkg --add-architecture x64
-
 RUN export uid=1000 gid=1000 && \
     mkdir -p /home/cerulean && \
     echo "cerulean:x:${uid}:${gid}:cerulean,,,:/home/cerulean:/bin/bash" >> /etc/passwd && \
