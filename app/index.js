@@ -3,40 +3,49 @@
 const path = require("path");
 const { app, BrowserWindow, ipcMain, globalShortcut } = require("electron");
 
-const Transport = require("azure-iot-device-mqtt").Mqtt;
-const Client = require("azure-iot-device").ModuleClient;
-const Message = require("azure-iot-device").Message;
+const mqtt = require('azure-iot-device-mqtt').Mqtt;
+const ModuleClient = require('azure-iot-device').ModuleClient;
+const Message = require('azure-iot-device').Message;
 let mainWindow,
     ipcLive = false,
-    edgeLive = false,
-    edgeClient;
+    moduleClient,
+    latestSerialData = {
+        value: 384
+    };
 
-// This function just pipes the messages without any change.
-function pipeMessage(client, msg) {
-    client.complete(msg, printResultFor("Receiving message"));
 
-    var message = msg.getBytes().toString("utf8");
-    if (message) {
-        var outputMsg = new Message(message);
-        client.sendOutputEvent(
-            "output1",
-            outputMsg,
-            printResultFor("Sending received message")
-        );
+ModuleClient.fromEnvironment(mqtt, function (err, client) {
+    if (err) {
+        throw err;
+    } else {
+        client.on('error', function (err) {
+            throw err;
+        });
+
+        client.on('inputMessage', function (inputName, msg) {
+            filterMessage(client, inputName, msg);
+        });
+
+        client.open(function (err) {
+            if (err) {
+                throw err;
+            } else {
+                console.log('IoT Hub module client initialized');
+                moduleClient = client;
+            }
+        });
+    }
+});
+
+function filterMessage(client, inputName, message) {
+    client.complete(message, printResultFor('Receiving message'));
+    if (inputName === 'serialDataInput') {
+        const messageBytes = message.getBytes().toString('utf8');
+        const messageObject = JSON.parse(messageBytes);
+        latestSerialData = messageObject;
     }
 }
 
-// Helper function to print results in the console
-function printResultFor(op) {
-    return function printResult(error, result) {
-        if (error) {
-            console.log(op + " error: " + error.toString());
-        }
-        if (result) {
-            console.log(op + " status: " + result.constructor.name);
-        }
-  };
-}
 
 function createWindow() {
     // Create the browser window.
@@ -69,27 +78,6 @@ function createWindow() {
         // when you should delete the corresponding element.
         mainWindow = null;
     });
-  
-    /*edgeClient = Client.fromEnvironment(Transport);
-
-    edgeClient.on("error", function(error) {
-        edgeLive = false;
-        throw error;
-    });
-
-    // connect to the Edge instance
-    edgeClient.open(function(error) {
-        if (error) {
-            throw error;
-        } else {
-            console.log("IoT Hub module client initialized");
-            edgeLive = true;
-            // Act on input messages to the module.
-            client.on("connection-test", function() {
-                pipeMessage(client,'connection-test');
-            });
-        }
-    });*/
 }
 
 app.allowRendererProcessReuse = true;
@@ -125,22 +113,11 @@ app.on("activate", function() {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
-
 ipcMain.on("heartbeat", (event, args) => {
-    ipcLive = true;
     console.log("heartbeat", args);
-    event.sender.send("heartbeat", "pong");
+    event.reply("heartbeat", "pong");
 });
 
-ipcMain.on("option", (event, args) => {
-    if(edgeLive && edgeClient !== undefined) {
-        const message = {
-            text: 'Testing connection from Well-O-Meter'
-        };
-        const outputMessage = new Message(JSON.stringify(message))
-        edgeClient.sendEvent(
-            outputMessage,
-            printResultFor("Sending received message")
-        );
-    }
+ipcMain.on("get-latest-serial-data", (event) => {
+    event.sender.send('latest-serial-data', latestSerialData);
 });
