@@ -17,9 +17,10 @@
             }
             #logo {
                 position: absolute;
-                bottom: 2em;
+                top: 2em;
                 left: 50%;
                 margin-left: -1em;
+                z-index: 2;
             }
             #main {
                 position: absolute;
@@ -68,7 +69,7 @@
             .wave + .wave {
                 z-index: 2;
             }
-            
+
             .ruler {
                 position: absolute;
                 width: auto;
@@ -131,7 +132,7 @@
 
             #depth {
                 position: absolute;
-                bottom: 60%;
+                bottom: 10%;
                 left: 50%;
                 width: 5em;
                 margin-left: -1em;
@@ -139,9 +140,9 @@
             }
 
             #connection {
-                float: right; 
-                padding: 20px 10px; 
-                margin-right: 20px; 
+                float: right;
+                padding: 20px 10px;
+                margin-right: 20px;
                 color: green;
             }
             #connection.pushed {
@@ -167,7 +168,7 @@
 
             #connection-modal.slide {
                 top: 50%;
-                margin-top: -140px;                
+                margin-top: -140px;
                 box-shadow: 0 0 0 10px rgba(0,0,0,0.25);
             }
 
@@ -183,8 +184,8 @@
                 right: 0;
                 font-size: 30px;
                 color: #03254c;
-                padding: 20px 10px; 
-                margin-right: 20px; 
+                padding: 20px 10px;
+                margin-right: 20px;
             }
             #modal-close.pushed {
                 transform: scale(0.8);
@@ -230,10 +231,10 @@
                 <div id="well-depth">
                     <div id="logo">
                         <img src="Cerulean_C_color.svg" width="60" />
-                    </div>            
+                    </div>
                     <div id="depth">
                         <div class="text">DEPTH</div>
-                        <div class="value">7,89m</div>
+                        <div id="depthValue" class="value">7,89m</div>
                     </div>
                     <svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" class="wave"><defs></defs><path id="waves1" d=""/></svg>
                     <svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" class="wave"><defs></defs><path id="waves2" d=""/></svg>
@@ -253,31 +254,34 @@
                 </div>
                 <div id="charts"></div>
             </article>
-            <div id="connection-modal" class="slide active">
+            <div id="connection-modal" class="">
                 <div id="modal-contents">
                     <div id="modal-close"><i class="fas fa-times"></i></div>
-                    <button id="test-connection">TEST CONNECTION</button>    
+                    <button id="test-connection">TEST CONNECTION</button>
                 </div>
             </div>
         </div>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.3.1/gsap.min.js" integrity="sha256-MVs0yHYDQBhIRZrNeWB1YaNMrGbFwowIEPIl3um5MZE=" crossorigin="anonymous"></script>
         <script src="js/wavify.js"></script>
         <script>
-            var wave1 = wavify(document.querySelector('#waves1'), {
+
+            const wave1Config = {
                 height: 110,
                 bones: 8,
                 amplitude: 20,
                 color: 'white',
                 speed: .15
-            });
-
-            var wave2 = wavify(document.querySelector('#waves2'), {
+            };
+            const wave2Config = {
                 height: 100,
                 bones: 4,
                 amplitude: 15,
                 color: 'rgba(255, 255, 255, .8)',
                 speed: .25
-            });            
+            };
+
+            var wave1 = wavify(document.querySelector('#waves1'), wave1Config);
+            var wave2 = wavify(document.querySelector('#waves2'), wave2Config);
 
             const getOptions = (timeLabels, data) => ({
                 chart: {
@@ -325,10 +329,34 @@
             };
 
             const { ipcRenderer } = require('electron');
+            const depthElement = document.querySelector('#well-depth');
+            const wellDepthHeight = depthElement.offsetHeight;
+            const depthValueElement = document.querySelector('#depthValue');
+
+            function getLatestSerialData() {
+                ipcRenderer.send('get-latest-serial-data');
+                // Get serial data every 2 seconds
+                setTimeout(getLatestSerialData, 2000);
+            }
 
             ipcRenderer.send('heartbeat', 'ping');
             ipcRenderer.on('heartbeat', (event, args) => {
                 console.log('heartbeat', args);
+                // Start getting serial data after successful heartbeat
+                getLatestSerialData();
+            });
+
+            ipcRenderer.on('latest-serial-data', (event, serialData) => {
+                const depthPercentage = serialData.value / 1000 * 100;
+                const depthValue = serialData.value / 100;
+                const newWave1Height = wellDepthHeight - (wellDepthHeight/100*depthPercentage) - 10;
+                const newWave2Height = newWave1Height;
+                const newWave1Config = Object.assign(wave1Config, { height: newWave1Height });
+                const newWave2Config = Object.assign(wave2Config, { height: newWave2Height });
+                wave1.reboot(newWave1Config);
+                wave2.reboot(newWave2Config);
+
+                depthValueElement.textContent = `${depthValue} m`
             });
 
             window.addEventListener('DOMContentLoaded', (event) => {
