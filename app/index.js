@@ -21,17 +21,16 @@ ModuleClient.fromEnvironment(mqtt, function (err, client) {
         client.on('error', function (err) {
             throw err;
         });
-
-        client.on('inputMessage', function (inputName, msg) {
-            filterMessage(client, inputName, msg);
-        });
-
         client.open(function (err) {
             if (err) {
                 throw err;
             } else {
                 console.log('IoT Hub module client initialized');
                 moduleClient = client;
+                moduleClient.on('inputMessage', function (inputName, msg) {
+                    filterMessage(client, inputName, msg);
+                });
+
             }
         });
     }
