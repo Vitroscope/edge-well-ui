@@ -37,7 +37,7 @@ ModuleClient.fromEnvironment(mqtt, function (err, client) {
 });
 
 function filterMessage(client, inputName, message) {
-    client.complete(message, printResultFor('Receiving message'));
+    client.complete(message);
     if (inputName === 'serialDataInput') {
         const messageBytes = message.getBytes().toString('utf8');
         const messageObject = JSON.parse(messageBytes);
