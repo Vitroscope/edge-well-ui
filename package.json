@@ -1,6 +1,6 @@
 {
   "name": "edge-well-ui",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Azure IoT Edge Module for displaying well water level",
   "main": "app/index.js",
   "scripts": {
