@@ -13,11 +13,10 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v2
-      - 
-        name: 'Login via Azure CLI'
+      - name: 'Login via Azure CLI'
         uses: azure/login@v1
         with:
-          environment: ${{ secrets.AZURE_CREDENTIALS }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
       -
         name: Prepare
         id: prepare
