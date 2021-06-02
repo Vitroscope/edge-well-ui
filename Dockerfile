@@ -21,14 +21,14 @@ RUN jq .version package.json -r > version.txt
 
 COPY app/ ./app/
 
-ENV TARGET=$TARGETPLATFORM
+ENV TARGET=linux/arm64
 
 RUN export PLATFORM=$(echo $TARGET | sed "s/linux\///") \
     ARCHITECTURE=$(echo $TARGET | sed "s/linux\///" | sed "s/amd/x/"); \
     DEBUG=electron-rebuild npm run rebuild; \
     DEBUG=electron-packager npm run build; \
     DEBUG=electron-installer-debian npm run deb; \
-    mv $WORKING_DIRECTORY/dist/installers/edge-well-ui_$(cat version.txt)_$PLATFORM.deb $WORKING_DIRECTORY/edge-well-ui.deb
+    mv $WORKING_DIRECTORY/dist/installers/edge-well-ui_$(cat version.txt)_arm64.deb $WORKING_DIRECTORY/edge-well-ui.deb
 
 # ---
 
@@ -63,6 +63,20 @@ RUN export uid=1000 gid=1000 && \
 WORKDIR /usr/src/edge-well-ui
 
 COPY --from=builder /usr/src/edge-well-ui/edge-well-ui.deb .
+
+RUN apt-get -f install
+
+RUN apt install libgtk-3-0 \
+    libgtk-3-0 \
+    libnotify4 \
+    libnss3 \
+    libxtst6 \
+    libatspi2.0-0 \
+    libxss1 --reinstall
+
+RUN dpkg --add-architecture armv7l
+
+RUN dpkg --configure -a --force-depends
 
 RUN dpkg -i edge-well-ui.deb
 
