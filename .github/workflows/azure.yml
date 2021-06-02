@@ -18,8 +18,6 @@ jobs:
         uses: azure/login@v1
         with:
           credentials: ${{ secrets.AZURE_CREDENTIALS }}
-        env:
-          credentials: ${{ secrets.AZURE_CREDENTIALS }}
       -
         name: Prepare
         id: prepare
