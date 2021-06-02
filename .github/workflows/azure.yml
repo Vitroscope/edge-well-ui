@@ -16,10 +16,10 @@ jobs:
       - 
         name: 'Login via Azure CLI'
         uses: azure/login@v1
-          with: # Set Azure credentials secret as an input
-            credentials: ${{ secrets.AZURE_CREDENTIALS }}
-          env: # Or as an environment variable
-            credentials: ${{ secrets.AZURE_CREDENTIALS }}
+        with:
+          credentials: ${{ secrets.AZURE_CREDENTIALS }}
+        env:
+          credentials: ${{ secrets.AZURE_CREDENTIALS }}
       -
         name: Prepare
         id: prepare
