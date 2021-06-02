@@ -18,7 +18,7 @@ jobs:
         id: prepare
         run: |
           DOCKER_IMAGE=ceruleandatahub/edge-well-ui
-          DOCKER_PLATFORMS=linux/amd64,linux/arm64
+          DOCKER_PLATFORMS=linux/arm64
           VERSION=edge
 
           if [[ $GITHUB_REF == refs/tags/* ]]; then
@@ -54,7 +54,7 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.CONTAINER_REGISTRY_USERNAME_vitroscope }}
           DOCKER_PASSWORD: ${{ secrets.CONTAINER_REGISTRY_PASSWORD_vitroscope }}
         run: |
-          echo "${DOCKER_PASSWORD}" | docker login --username "${DOCKER_USERNAME}" --password-stdin
+          echo "${DOCKER_PASSWORD}" | docker login --username "${DOCKER_USERNAME}" --password-stdin vitroscope.azurecr.io
       -
         name: Docker Buildx (push)
         id: push
