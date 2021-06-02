@@ -21,7 +21,7 @@ jobs:
         name: Prepare
         id: prepare
         run: |
-          DOCKER_IMAGE=ceruleandatahub/edge-well-ui
+          DOCKER_IMAGE=${{ secrets.REGISTRY_LOGIN_SERVER }}/samplemodule
           DOCKER_PLATFORMS=linux/arm64
           VERSION=edge
 
@@ -61,12 +61,6 @@ jobs:
       - 
         run: |
           docker buildx build --platform linux/arm64 -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/samplemodule:${{ github.sha }} . --push 
-      -
-        name: Docker Buildx (push)
-        id: push
-        if: success() && github.event_name != 'pull_request'
-        run: |
-          docker buildx build --output "type=image,push=true" ${{ steps.prepare.outputs.buildx_args }}
       -
         name: Docker Check Manifest
         if: always() && github.event_name != 'pull_request'
