@@ -74,7 +74,7 @@ RUN apt install libgtk-3-0 \
     libatspi2.0-0 \
     libxss1 --reinstall
 
-RUN dpkg --add-architecture armv7l
+RUN dpkg --add-architecture arm64
 
 RUN dpkg --configure -a --force-depends
 
