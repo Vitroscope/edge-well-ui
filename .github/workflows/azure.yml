@@ -13,6 +13,11 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v2
+      - 
+        name: 'Login via Azure CLI'
+          uses: azure/login@v1
+          with:
+            creds: ${{ secrets.AZURE_CREDENTIALS }}
       -
         name: Prepare
         id: prepare
@@ -48,13 +53,28 @@ jobs:
         run: |
           docker buildx build --no-cache --output "type=image,push=false" ${{ steps.prepare.outputs.buildx_args }}
       -
-        name: Docker Login
-        if: success() && github.event_name != 'pull_request'
-        env:
-          DOCKER_USERNAME: ${{ secrets.CONTAINER_REGISTRY_USERNAME_vitroscope }}
-          DOCKER_PASSWORD: ${{ secrets.CONTAINER_REGISTRY_PASSWORD_vitroscope }}
+        name: 'Build and push image'
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - 
         run: |
-          echo "${DOCKER_PASSWORD}" | docker login --username "${DOCKER_USERNAME}" --password-stdin vitroscope.azurecr.io
+          docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/samplemodule:${{ github.sha }}
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/samplemodule:${{ github.sha }}
+      - 
+        name: 'Deploy to Azure Container Instances'
+          uses: 'azure/aci-deploy@v1'
+          with:
+            resource-group: ${{ secrets.RESOURCE_GROUP }}
+            dns-name-label: ${{ secrets.RESOURCE_GROUP }}${{ github.run_number }}
+            image: ${{ secrets.REGISTRY_LOGIN_SERVER }}/samplemodule:${{ github.sha }}
+            registry-login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+            registry-username: ${{ secrets.REGISTRY_USERNAME }}
+            registry-password: ${{ secrets.REGISTRY_PASSWORD }}
+            name: samplemodule
+            location: 'northeurope'
       -
         name: Docker Buildx (push)
         id: push
