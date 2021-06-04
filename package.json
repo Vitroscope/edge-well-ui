@@ -3,6 +3,50 @@
   "version": "0.6.2",
   "description": "Azure IoT Edge Module for displaying well water level",
   "main": "app/index.js",
+    "build": {
+    "productName": "lastbrewtime",
+    "appId": "",
+    "files": [
+      "package.json"
+    ],
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "msi"
+      ]
+    },
+    "linux": {
+      "target": {
+        "target": "deb",
+        "arch": "armv7l"
+      },
+      "category": "Development"
+    },
+    "deb": {
+      "fpm": [
+        "--architecture",
+        "armhf"
+      ]
+    },
+    "directories": {
+      "buildResources": "resources",
+      "output": "release"
+    }
+  },
   "scripts": {
     "start": "node_modules/.bin/electron .",
     "rebuild": "node_modules/.bin/electron-rebuild",
