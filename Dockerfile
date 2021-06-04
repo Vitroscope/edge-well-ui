@@ -1,4 +1,4 @@
-FROM --platform=$TARGETPLATFORM armv7/armhf-ubuntu:16.04 as builder
+FROM --platform=linux/armv7 armv7/armhf-ubuntu:16.04 as builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -21,7 +21,7 @@ RUN jq .version package.json -r > version.txt
 
 COPY app/ ./app/
 
-ENV TARGET=$TARGETPLATFORM
+ENV TARGET=linux/armv7
 
 RUN export PLATFORM=$(echo $TARGET | sed "s/linux\///") \
     ARCHITECTURE=$(echo $TARGET | sed "s/linux\///" | sed "s/amd/x/"); \
