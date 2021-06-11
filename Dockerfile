@@ -1,4 +1,4 @@
-FROM --platform=linux/armv7 armv7/armhf-ubuntu:16.04 as builder
+FROM --platform=linux/armv7 arm32v7/node:10-slim as builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -32,7 +32,7 @@ RUN export PLATFORM=$(echo $TARGET | sed "s/linux\///") \
 
 # ---
 
-FROM --platform=$TARGETPLATFORM armv7/armhf-ubuntu:16.04
+FROM --platform=$TARGETPLATFORM arm32v7/node:10-slim
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
